@@ -1,6 +1,8 @@
 #include "sudoku.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <assert.h>
 
 struct grid inputGrid()
 {
@@ -87,10 +89,138 @@ struct grid streamInGrid(FILE *stream)
     return out;
 }
 
+void growStack(struct solveStack* stack)
+{
+    if (stack->size == 0)
+    {
+        stack->data = malloc(sizeof(struct grid));
+        assert(stack->data);
+    }
+    else
+    {
+        size_t newSize = stack->size*2;
+        stack->data = realloc(stack->data, newSize);
+        assert(stack->data);
+        stack->size = newSize;
+    }
+}
+
+void pushStack(struct solveStack* stack, struct grid in)
+{
+    if (stack->top == stack->size)
+    {
+        growStack(stack);
+    }
+    stack->top++;
+    stack->data[stack->top] = in;
+}
+
+struct grid peekStack(struct solveStack* stack)
+{
+    return stack->data[stack->top];
+}
+
+void popStack(struct solveStack* stack)
+{
+    if (stack->top > 0)
+    {
+        stack->top--;
+    }
+}
+
+bool check(struct grid in)
+{
+    bool squareChecks[3][3][9]={false};
+    for (unsigned i=0; i<9; i++)
+    {
+        printf("new row check\n");
+        bool rowChecks[9]={false};
+        bool colChecks[9]={false};
+        
+        for (unsigned j=0; j<9; j++)
+        {
+            // check rows and columns
+            if (in.data[i][j])
+            {
+                if(rowChecks[in.data[i][j]-1])
+                {
+                    return false;
+                }
+                else
+                {
+                    rowChecks[in.data[i][j]-1] = true;
+                }
+
+                //check squares
+                unsigned squareRow = i/3;
+                unsigned squareCol = j/3;
+                if(squareChecks[squareRow][squareCol][in.data[i][j]-1])
+                {
+                    return false;
+                }
+                else
+                {
+                    squareChecks[squareRow][squareCol][in.data[i][j]-1] = true;
+                }
+            }
+            if (in.data[j][i])
+            {
+                if(colChecks[in.data[j][i]-1])
+                {
+                    return false;
+                }
+                else
+                {
+                    colChecks[in.data[j][i]-1] = true;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+struct grid solve(struct grid input)
+{
+    struct solveStack stack;
+    stack.top = 0;
+    stack.size = 0;
+
+    pushStack(&stack, input);
+
+
+    // start solving
+
+    while (stack.top > 0)
+    {
+    //find first empty square
+        for (unsigned i=0; i<9; i++)//row
+        {
+            for (unsigned j=0; j<9; j++)//column
+            {
+                bool found = false; //if any paths are found
+
+                //test all values and add to stack if fits
+                for (unsigned k=0; k<9; k++)//test value
+                {
+
+                }
+            }
+        }
+    }
+}
+
 int main(int argc, char* argv)
 {
     FILE *inFile = fopen("puzzle.txt", "r");
     struct grid puzzle = streamInGrid(inFile);
     fclose(inFile);
     printGrid(puzzle, stdout);
+    if (check(puzzle))
+    {
+        printf("valid\n");
+    }
+    else
+    {
+        printf("invalid\n");
+    }
 }

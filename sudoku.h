@@ -10,4 +10,5 @@ struct solveStack
 {
     struct grid *data;
     size_t size;
+    size_t top;
 };
