@@ -133,7 +133,6 @@ bool check(struct grid in)
     bool squareChecks[3][3][9]={false};
     for (unsigned i=0; i<9; i++)
     {
-        printf("new row check\n");
         bool rowChecks[9]={false};
         bool colChecks[9]={false};
         
