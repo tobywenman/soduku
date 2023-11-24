@@ -218,6 +218,12 @@ struct grid solve(struct grid input)
     while (true)
     {
         next:
+        if (stack.top == 0)
+        {
+            struct grid empty;
+            free(stack.data);
+            return empty;
+        }
         struct grid curTest = peekStack(&stack);
 
         popStack(&stack);
@@ -234,6 +240,7 @@ struct grid solve(struct grid input)
         {
             if (checkComplete(curTest))
             {
+                free(stack.data);
                 return curTest;
             }
             //find first empty square
