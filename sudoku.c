@@ -26,13 +26,13 @@ struct grid inputGrid()
                     else
                     {
                         printf("invalid input\n");
-                        scanf("%*[^\n]%*c");
+                        int tmp = scanf("%*[^\n]%*c");
                     }
                 }
                 else
                 {
                     printf("invalid input\n");
-                    scanf("%*[^\n]%*c");
+                    int tmp = scanf("%*[^\n]%*c");
                 }
             }
         }
@@ -63,6 +63,7 @@ void printGrid(struct grid in, FILE *stream)
 struct grid streamInGrid(FILE *stream)
 {
     struct grid out;
+    out.nextTest = 1;
     for (unsigned i=0; i<9; i++)
     {
         while(getc(stream) != '|');
@@ -86,23 +87,35 @@ struct grid streamInGrid(FILE *stream)
             }
         }
     }
+
+    for (unsigned i=0; i<9; i++)
+    {
+        for (unsigned j=0; j<9; j++)
+        {
+            if (out.data[i][j]==0)
+            {
+                out.x = i;
+                out.y = j;
+                return out;
+            }
+        }
+    }
     return out;
 }
 
 void growStack(struct solveStack* stack)
 {
-    if (stack->size == 0)
-    {
-        stack->data = malloc(sizeof(struct grid));
-        assert(stack->data);
-    }
-    else
-    {
-        size_t newSize = stack->size*2;
-        stack->data = realloc(stack->data, newSize);
-        assert(stack->data);
-        stack->size = newSize;
-    }
+    size_t newSize = stack->size*2;
+    stack->data = realloc(stack->data, sizeof(struct grid)*newSize);
+    assert(stack->data);
+    stack->size = newSize;
+}
+
+void initStack(struct solveStack* stack)
+{
+    stack->data = malloc(sizeof(struct grid));
+    stack->top = 0;
+    stack->size = 1;
 }
 
 void pushStack(struct solveStack* stack, struct grid in)
@@ -111,13 +124,13 @@ void pushStack(struct solveStack* stack, struct grid in)
     {
         growStack(stack);
     }
-    stack->top++;
     stack->data[stack->top] = in;
+    stack->top++;
 }
 
 struct grid peekStack(struct solveStack* stack)
 {
-    return stack->data[stack->top];
+    return stack->data[stack->top-1];
 }
 
 void popStack(struct solveStack* stack)
@@ -178,30 +191,66 @@ bool check(struct grid in)
     return true;
 }
 
+bool checkComplete(struct grid in)
+{
+    for (unsigned i=0; i<9; i++)
+    {
+        for (unsigned j=0; j<9; j++)
+        {
+            if (in.data[i][j]==0)
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 struct grid solve(struct grid input)
 {
     struct solveStack stack;
-    stack.top = 0;
-    stack.size = 0;
+    initStack(&stack);
 
     pushStack(&stack, input);
 
-
     // start solving
 
-    while (stack.top > 0)
+    while (true)
     {
-    //find first empty square
-        for (unsigned i=0; i<9; i++)//row
+        next:
+        struct grid curTest = peekStack(&stack);
+
+        popStack(&stack);
+
+        curTest.data[curTest.x][curTest.y] = curTest.nextTest;
+
+        if (curTest.nextTest < 9)
         {
-            for (unsigned j=0; j<9; j++)//column
+            curTest.nextTest++;
+            pushStack(&stack, curTest);
+        }
+
+        if (check(curTest))
+        {
+            if (checkComplete(curTest))
             {
-                bool found = false; //if any paths are found
-
-                //test all values and add to stack if fits
-                for (unsigned k=0; k<9; k++)//test value
+                return curTest;
+            }
+            //find first empty square
+            for (unsigned i=0; i<9; i++)//row
+            {
+                for (unsigned j=0; j<9; j++)//column
                 {
-
+                    if(curTest.data[i][j] == 0)
+                    {
+                        struct grid newTest;
+                        newTest = curTest;
+                        newTest.x = i;
+                        newTest.y = j;
+                        newTest.nextTest = 1;
+                        pushStack(&stack, newTest);
+                        goto next;
+                    }
                 }
             }
         }
@@ -213,13 +262,6 @@ int main(int argc, char* argv)
     FILE *inFile = fopen("puzzle.txt", "r");
     struct grid puzzle = streamInGrid(inFile);
     fclose(inFile);
-    printGrid(puzzle, stdout);
-    if (check(puzzle))
-    {
-        printf("valid\n");
-    }
-    else
-    {
-        printf("invalid\n");
-    }
+
+    printGrid(solve(puzzle), stdout);
 }

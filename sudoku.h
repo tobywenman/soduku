@@ -4,6 +4,7 @@
 struct grid
 {
     uint8_t data[9][9];
+    uint8_t x,y,nextTest;
 };
 
 struct solveStack
